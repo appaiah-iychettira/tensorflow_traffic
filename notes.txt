@@ -1,0 +1,259 @@
+Docker:
+=======
+1. Install Docker Desktop
+2. When the installation finishes, Docker starts automatically. The whale icon in the notification area indicates that Docker is running, 
+   and accessible from a terminal.
+
+3. Open a command-line terminal like PowerShell, and try out some Docker commands!
+   Run docker version to check the version.
+   c:\> docker version
+
+   Run docker run hello-world to verify that Docker can pull and run images.
+   c:\> docker run hello-world
+
+
+   Docker is available in any terminal as long as the Docker Desktop - Windows app is running. 
+   Settings are available on the UI, accessible from the Docker whale icon in the taskbar.
+
+4. ^D to exit container.
+
+
+Notes:
+------
+  1. Docker command line format:
+     docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
+
+     Options can be combined: -i -t can be combined as -it
+
+
+	-t              : Allocate a pseudo-tty
+	-i              : Keep STDIN open even if not attached
+	--volume , -v	: Bind mount a volume.
+                          Volumes are the docker area of the file system that contains data generated and used by Docker containers.
+                          Bind mounts are dependent on the directory structure of the host machine whereas volumes are managed by Docker.
+                          -v or --volume: Consists of three fields, separated by colon characters (:). The fields must be in the correct order.
+			 In the case of named volumes, the first field is the name of the volume, and is unique on a given host machine. For anonymous volumes, the first field is omitted.
+			 The second field is the path where the file or directory are mounted in the container.
+			 The third field is optional, and is a comma-separated list of options, such as ro. These options are discussed below.
+				
+			 Ex to bind a folder tf_file with path c:\tensorflow\tf_files to the root ( i.e. /tf_file ) of a bash container: docker run -it run -it --volume C:\tensorflow\tf_files:/tf_files bash
+
+	--workdir , -w	: Working directory inside the container
+			  The -w lets the command being executed inside directory given, here /path/to/dir/. 
+			  If the path does not exist it is created inside the container.
+			  
+			 Example:  docker  run -w /path/to/dir/ -i -t  ubuntu pwd
+			  
+
+	--publish , -p	: Publish a container’s port(s) to the host						
+			  Example: To bind port 8080 of the container to TCP port 80 on 127.0.0.1 of the host machine: docker run -p 127.0.0.1:80:8080/tcp ubuntu bash		  
+			  
+  			  Notes:
+			  127.0.0.1 : localhost
+			  Port 8080 : Alternative to port 80 (dedicated port for HTTP protocol is 80) which is a web service port typically used for a personally hosted web servers.
+
+        --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	Create a Ububtu, Bash container named tftest. Mount a host filesystem directory C:\tensorflow\tf_files under root as /tf_files and set the /tf_files directory as the working directory.
+
+	Open a command shell:
+	C:\Users\Arun>mkdir c:\tensorflow
+	C:\Users\Arun>mkdir c:\tensorflow\tf_files
+	C:\Users\Arun>copy con c:\tensorflow\tf_files\test.txt
+	Test.
+	^Z
+        1 file(s) copied.
+
+	C:\Users\Arun>docker run -it --name tftest --volume C:\tensorflow\tf_files:/tf_files -w /tf_files ubuntu bash
+	drwxrwxrwx 2 root root    0 Dec 26 17:30 ./
+	drwxr-xr-x 1 root root 4096 Dec 26 18:26 ../
+	root@05c5504b95ee:/tf_files# pwd
+	/tf_files
+	root@05c5504b95ee:/tf_files# ll
+	total 5
+	drwxrwxrwx 2 root root    0 Dec 26 18:33 ./
+	drwxr-xr-x 1 root root 4096 Dec 26 18:26 ../
+	-rwxr-xr-x 1 root root    7 Dec 26 18:31 test.txt*
+	root@05c5504b95ee:/tf_files# cat test.txt
+	Test.
+	root@05c5504b95ee:/tf_files#
+
+
+	To see the container name, Open a command shell:
+	C:\Users\Arun>docker ps
+	CONTAINER ID        IMAGE                   COMMAND                  CREATED             STATUS              PORTS                              NAMES
+	ded2b009489e        ubuntu                  "bash"                   6 seconds ago       Up 4 seconds                                           tftest
+
+        --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+	 REF: https://docs.docker.com/engine/reference/commandline/run/#options
+	
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	tensor flow:
+        ------------
+	( https://www.tensorflow.org/hub/tutorials/image_retraining#training_on_flowers)
+
+	docker run -it --name tf --volume C:\tensorflow\tf_files:/tf_files -w /tf_files --publish 6006:6006 tensorflow/tensorflow bash
+
+	docker run -it --name traffic --volume C:\tensorflow\tf_files\traffic:/traffic -w /traffic --publish 6006:6006 tensorflow/tensorflow bash
+
+	docker run -it --name android --volume C:\tensorflow\android:/android -w /android bash
+
+	Check tensorflow Version:
+
+		root@39d0b2a8c17d:/tf_files# python
+		Python 2.7.12 (default, Dec  4 2017, 14:50:18)
+		[GCC 5.4.0 20160609] on linux2
+		Type "help", "copyright", "credits" or "license" for more information.
+		>>> print(tf.__version__)
+		Traceback (most recent call last):
+		  File "<stdin>", line 1, in <module>
+		NameError: name 'tf' is not defined
+		>>> import tensorflow as tf
+		>>> print(tf.__version__)
+		1.12.0
+		>>>
+
+	Download Training flower Images & unzip:
+
+		curl -LO http://download.tensorflow.org/example_images/flower_photos.tgz
+
+		Notes:
+		1. curl is a tool to transfer data from or to a server, using one of the supported protocols 
+                   (DICT, FILE, FTP, FTPS, GOPHER, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, POP3, POP3S, RTMP, 
+                   RTSP, SCP, SFTP, SMB, SMBS, SMTP, SMTPS, TELNET and TFTP). The command is designed to work without user interaction.
+
+	Download retraining script - retrain.py:
+	
+		curl -LO https://raw.githubusercontent.com/tensorflow/tensorflow/r1.1/tensorflow/examples/image_retraining/retrain.py
+
+	Start tensorboard:
+		root@39d0b2a8c17d:/tf_files# tensorboard --logdir training_summaries &
+		
+		root@39d0b2a8c17d:/tf_files# TensorBoard 1.12.0 at http://39d0b2a8c17d:6006 (Press CTRL+C to quit)		<-- tensorboard displays this. Press Enter to get back to command prompt.
+		:
+
+		Notes: 
+		1. To kill all existing instances of tensorboard:		pkill -f "tensorboard"
+	
+	Execute reteaining script:
+		root@39d0b2a8c17d:/tf_files# python retrain.py --bottleneck_dir=./bottlenecks --how_many_training_steps 500 --model_dir=./inception --output_graph=./retrained_graph.pb --output_labels=./retrained_labels.txt --image_dir=./flower_photos
+					     python retrain.py --bottleneck_dir=./bottlenecks --how_many_training_steps 4000 --model_dir=./inception --output_graph=./retrained_graph.pb --output_labels=./retrained_labels.txt --image_dir=./traffic_light_photos
+		
+
+		Notes:
+		1. The inception model is downloaded and training starts.
+		   This script loads the pre-trained module and trains a new classifier on top for the flower photos.
+                   None of the flower species were in the original ImageNet classes the full network was trained on. 
+                   It uses transfer learning - with transfer learning lower layers have been trained to distinguish between some objects 
+                   can be reused for many recognition tasks without any alteration.
+		2. The retrain script will look at the subfolders in the image directory and use the subfolder names as tags for 
+                   classification of images within that subfolder.
+		3. Once bottleneck generation is complete -- open a browser and go to localhost port 6006 for tensorboard output: http://127.0.0.1:6006
+		4. Once training is complete there should be a retrained_graph.pb file in the working folder.
+
+	To Test download retraining script - label_image.py::
+		curl -LO https://goo.gl/3lTKZs
+		mv 3lTKZs label_image.py
+
+	 Copy an image to test into a test folder:
+         md test_photos
+	 cp ./flower_photos/daisy/21652746_cc379e0eea_m.jpg ./test_photos/test.jpg
+	 
+	python label_image.py ./test_photos/test.jpg
+
+
+	root@39d0b2a8c17d:/tf_files# python label_image.py ./test_photos/test.jpg
+	WARNING:tensorflow:From label_image.py:11: __init__ (from tensorflow.python.platform.gfile) is deprecated and will be removed in a future version.
+	Instructions for updating:
+	Use tf.gfile.GFile.
+	daisy (score = 0.98825)
+	sunflowers (score = 0.00949)
+	dandelion (score = 0.00163)
+	tulips (score = 0.00060)
+	roses (score = 0.00004)
+
+
+	Note: 
+	To fix the WARNING - edit label_image.py and replace "tf.gfile.FastGFile" with "tf.gfile.GFile" on lines 11 and 19.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+  Ubuntu Bash:
+  ------------
+  docker run -it ubuntu bash
+
+  To see all running containers, open a command window and type:
+  c:\> docker ps
+
+ Tensorflow:
+ ===========
+
+ Jupyter Notebook:
+ -----------------
+ docker run -it -p 8888:8888 tensorflow/tensorflow
+ ...
+ ...
+ An URL is displayed once tensorflow pull is complete:
+ http://(0c814d345afa or 127.0.0.1):8888/?token=bb6b2f4a80f2584d4694c20fd6b1e217728801c26ea5d6e7 
+ 
+ modify / remove (...) and keep just 127.0.0.1:
+ http://127.0.0.1:8888/?token=bb6b2f4a80f2584d4694c20fd6b1e217728801c26ea5d6e7
+
+ Paste this URL into a browser.
+ 
+ bash:
+ -----
+ 1. docker run -it tensorflow/tensorflow bash
+     OR 
+    docker run -it tensorflow/tensorflow:<version> bash
+    ex: docker run -it tensorflow/tensorflow:1.1.0 bash
+
+2. 
+
+docker run -it --volume ${HOME}/tf_files:/tf_files --workdir /tf_files --publish 6006:6006 tensorflow/tensorflow:1.1.0 bash
+
+docker run -it --name tf --volume C:\tensorflow\tf_files:/tf_files -w /tf_files --publish 6006:6006 tensorflow/tensorflow bash
+
+=====================================================================================================================================================
+git:
+====
+
+git clone <url>
+git add -A <file>
+git commit -m "message"
+git push
+
+git pull
+
+=====================================================================================================================================================
+PIP:
+====
+1. Install the 64-bit Python 3 release for Windows (select pip as an optional feature) -- use Python 3.6
+   https://www.python.org/downloads/windows/
+
+2.pip
+  Open command prompt and execute:
+  c:\> pip3 install -U pip virtualenv
+
+3. Create Virtual Environment
+   c:\> py -m virtualenv venv
+
+   The second argument is the location to create the virtualenv. Generally, you can just create this in your project and call it env.
+
+4. Activate the virtual environment:
+
+   c:\>.\venv\Scripts\activate
+
+   Command prompt becomes:
+   (venv) c:\>
+  
+   Note: Tor Exit virtualenv:
+   (venv) c:\> deactivate
+
+5. Install packages within a virtual environment without affecting the host system setup. Start by upgrading pip:
+   (venv) c:\> pip install --upgrade pip
+   (venv) c:\> pip list  # show packages installed within the virtual environment
+
+6. Install the TensorFlow pip package:
+   (venv) c:\> pip install --upgrade tensorflow
+   
